@@ -1,0 +1,125 @@
+{% extends 'journal/base.html' %}
+{% block title %}Mastery — What to consider next{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Mastery tracker</div>
+    <div class="page-sub">Build your edge through observation · {{ stats.total }} setups analysed</div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-label">Setups logged</div><div class="stat-val blue">{{ stats.total }}</div></div>
+  <div class="stat-card"><div class="stat-label">Win rate</div><div class="stat-val green">{% if stats.win_rate %}{{ stats.win_rate }}%{% else %}—{% endif %}</div></div>
+  <div class="stat-card"><div class="stat-label">Progress</div><div class="stat-val amber">{{ stats.progress_pct }}%</div></div>
+  <div class="stat-card"><div class="stat-label">Findings logged</div><div class="stat-val">{{ grouped|length }}</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start">
+<div>
+
+<!-- COINS BEING TESTED -->
+<div class="card" style="margin-bottom:18px">
+  <div class="card-title">Coins being tested</div>
+  {% if coins %}
+  <div class="coins-wrap">
+    {% for coin in coins %}<span class="coin-tag">{{ coin }}</span>{% endfor %}
+  </div>
+  <p style="font-size:11px;color:var(--text3);margin-top:10px;font-family:var(--mono)">Auto-fetched from setup logs · {{ coins|length }} unique coin{% if coins|length != 1 %}s{% endif %}</p>
+  {% else %}
+  <p style="font-size:13px;color:var(--text3)">No setups logged yet — coins will appear here automatically as you log trades.</p>
+  {% endif %}
+</div>
+
+<!-- FINDINGS BY CATEGORY -->
+{% for cat_label, cat_data in grouped.items %}
+<div class="mastery-section">
+  <div class="mastery-section-title">
+    <span>{{ cat_label }}</span>
+    <span style="color:var(--text3);font-size:10px">{{ cat_data.items|length }} finding{% if cat_data.items|length != 1 %}s{% endif %}</span>
+  </div>
+
+  {% if cat_data.items %}
+    {% for finding in cat_data.items %}
+    <div class="finding-item">
+      <div style="flex:1">
+        <div class="finding-text">{{ finding.text }}</div>
+        <div class="finding-meta">
+          {% if finding.setup %}Setup #{{ finding.setup.setup_number }} · {{ finding.setup.pair|upper }} · {% endif %}{{ finding.created_at|date:"M j, Y" }}
+        </div>
+      </div>
+      <form method="post" action="{% url 'finding_delete' finding.pk %}" style="flex-shrink:0">
+        {% csrf_token %}
+        <button type="submit" class="finding-del" title="Delete finding">✕</button>
+      </form>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div style="padding:10px 0;font-size:12px;color:var(--text3);font-family:var(--mono)">No findings yet in this category.</div>
+  {% endif %}
+</div>
+{% endfor %}
+
+</div>
+
+<!-- SIDEBAR: ADD FINDING FORM -->
+<div style="position:sticky;top:68px">
+  <div class="card">
+    <div class="card-title">Log a new finding</div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="field" style="margin-bottom:10px">
+        <label>Category</label>
+        <select name="category">
+          {% for v,l in finding_categories %}
+          <option value="{{ v }}">{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Related setup (optional)</label>
+        <select name="setup">
+          <option value="">— General finding —</option>
+          {% for s in form.fields.setup.queryset %}
+          <option value="{{ s.pk }}">#{{ s.setup_number }} {{ s.pair|upper }} · {{ s.date }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Observation / finding</label>
+        <textarea name="text" rows="5" placeholder="Write your observation here — be specific. e.g. 'M1 entry after M15 close outside zone reduced SL distance by avg 40% compared to M15 direct entry'..."></textarea>
+      </div>
+      <button type="submit" class="btn-primary full">Save finding</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:0">
+    <div class="card-title">What to investigate</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8">
+      <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--green);font-family:var(--mono)">Entry refinement</span><br>
+        Can M5/M3/M1 reduce SL distance? Which TF gives cleaner entry closes?
+      </div>
+      <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--amber);font-family:var(--mono)">Session pattern</span><br>
+        Which sessions produce the most setups? Which sessions have highest winrate?
+      </div>
+      <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--red);font-family:var(--mono)">Stop-out conditions</span><br>
+        What does price do before hitting SL? Is there a pre-exit signal?
+      </div>
+      <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--blue);font-family:var(--mono)">Break-even rule</span><br>
+        At what R should you move to BE? Which setups benefit from early BE?
+      </div>
+      <div>
+        <span style="color:var(--text2);font-family:var(--mono)">Higher level</span><br>
+        After 500 setups: can this strategy scale? What changes on H1/H4?
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endblock %}

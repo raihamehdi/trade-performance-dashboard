@@ -1,0 +1,162 @@
+{% extends 'journal/base.html' %}
+{% block title %}Log Setup{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Log a setup</div>
+    <div class="page-sub">Strategy A · M15 base · {{ stats.total }} / 1000 logged</div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-label">Setups logged</div><div class="stat-val blue">{{ stats.total }}</div></div>
+  <div class="stat-card"><div class="stat-label">Win rate</div><div class="stat-val green">{% if stats.win_rate %}{{ stats.win_rate }}%{% else %}—{% endif %}</div></div>
+  <div class="stat-card"><div class="stat-label">A-grade %</div><div class="stat-val amber">{% if stats.a_pct %}{{ stats.a_pct }}%{% else %}—{% endif %}</div></div>
+  <div class="stat-card"><div class="stat-label">Avg R:R</div><div class="stat-val">{% if stats.avg_rr %}{{ stats.avg_rr }}R{% else %}—{% endif %}</div></div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label"><span>1000-setup mastery progress</span><span style="color:var(--green)">{{ stats.total }} / 1000</span></div>
+  <div class="progress-track"><div class="progress-fill" style="width:{{ stats.progress_pct }}%"></div></div>
+  <div class="progress-phases"><span>Phase 1 (0–200)</span><span>Phase 2 (201–500)</span><span>Phase 3 (501–800)</span><span>Phase 4 (801–1000)</span></div>
+</div>
+
+<div class="split">
+<div class="split-main">
+<form method="post" action="{% url 'add_setup' %}" enctype="multipart/form-data" id="setup-form">
+{% csrf_token %}
+
+<div class="card">
+  <div class="card-title">Setup details</div>
+  <div class="field-grid fg4" style="margin-bottom:10px">
+    <div class="field"><label>Setup #</label><input type="number" name="setup_number" value="{{ next_num }}" min="1" required></div>
+    <div class="field"><label>Date</label><input type="date" name="date" value="{{ form.date.value|default:'' }}" required></div>
+    <div class="field"><label>Time (market)</label><input type="time" name="time"></div>
+    <div class="field"><label>Pair / coin</label><input type="text" name="pair" placeholder="BTCUSDT" required></div>
+  </div>
+  <div class="field-grid fg3">
+    <div class="field"><label>Session</label><select name="session"><option value="">— select —</option>{% for v,l in form.fields.session.choices %}{% if v %}<option value="{{ v }}">{{ l }}</option>{% endif %}{% endfor %}</select></div>
+    <div class="field"><label>M15 bias</label><select name="m15_bias"><option value="">— select —</option>{% for v,l in form.fields.m15_bias.choices %}{% if v %}<option value="{{ v }}">{{ l }}</option>{% endif %}{% endfor %}</select></div>
+    <div class="field"><label>Entry TF used</label><select name="entry_tf"><option value="">— select —</option>{% for v,l in form.fields.entry_tf.choices %}{% if v %}<option value="{{ v }}">{{ l }}</option>{% endif %}{% endfor %}</select></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Setup grade</div>
+  <input type="hidden" name="grade" id="grade-hidden" value="">
+  <div class="grade-group" style="margin-bottom:10px">
+    <button type="button" class="grade-btn" onclick="setGrade('A',this)">A-grade</button>
+    <button type="button" class="grade-btn" onclick="setGrade('B',this)">B-grade</button>
+    <button type="button" class="grade-btn" onclick="setGrade('SKIP',this)">Skip / invalid</button>
+  </div>
+  <div class="field"><label>Why this grade?</label><textarea name="grade_reason" placeholder="e.g. Clean structure, strong session, confirmed close outside zone..."></textarea></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Risk & numbers</div>
+  <div class="field-grid fg3" style="margin-bottom:10px">
+    <div class="field"><label>Entry price</label><input type="number" name="entry_price" step="0.00001" placeholder="42150.00"></div>
+    <div class="field"><label>Stop loss</label><input type="number" name="stop_loss" step="0.00001" placeholder="41900.00"></div>
+    <div class="field"><label>Take profit</label><input type="number" name="take_profit" step="0.00001" placeholder="42800.00"></div>
+  </div>
+  <div class="field-grid fg3">
+    <div class="field"><label>Planned R:R</label><input type="number" name="planned_rr" step="0.1" placeholder="2.6"></div>
+    <div class="field"><label>% risk used</label><input type="number" name="risk_percent" step="0.1" placeholder="1.0"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Outcome</div>
+  <input type="hidden" name="outcome" id="outcome-hidden" value="">
+  <div class="outcome-group" style="margin-bottom:10px">
+    <button type="button" class="outcome-btn" onclick="setOutcome('win',this)">Win</button>
+    <button type="button" class="outcome-btn" onclick="setOutcome('loss',this)">Loss</button>
+    <button type="button" class="outcome-btn" onclick="setOutcome('be',this)">Break-even</button>
+    <button type="button" class="outcome-btn" onclick="setOutcome('not_taken',this)">Not taken</button>
+  </div>
+  <div class="field-grid fg2">
+    <div class="field"><label>Actual R achieved</label><input type="number" name="actual_r" step="0.1" placeholder="1.8"></div>
+    <div class="field"><label>Exit reason</label><input type="text" name="exit_reason" placeholder="Hit TP / SL / manual"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Screenshot</div>
+  <div class="upload-area" id="upload-area" onclick="document.getElementById('screenshot-input').click()">
+    <input type="file" name="screenshot" id="screenshot-input" accept="image/*" onchange="previewImage(this)">
+    <div class="upload-label">Click to upload chart screenshot &nbsp;·&nbsp; <span>PNG, JPG, WEBP</span></div>
+    <img id="preview-img" class="screenshot-preview" style="display:none" src="" alt="preview">
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Psychology check</div>
+  <input type="hidden" name="psych_tags" id="psych-hidden" value="[]">
+  <div class="psych-grid" style="margin-bottom:12px">
+    {% for tag in psych_choices %}
+    <button type="button" class="psych-tag" onclick="togglePsych(this)">{{ tag }}</button>
+    {% endfor %}
+  </div>
+  <div class="field">
+    <label>Psychology note</label>
+    <textarea name="psych_note" placeholder="Describe exactly how you felt entering, managing, and exiting this trade..." ></textarea>
+    {% if form.psych_note.errors %}<span class="error-msg">{{ form.psych_note.errors.0 }}</span>{% endif %}
+  </div>
+</div>
+
+<button type="submit" class="btn-primary full">Save setup to journal</button>
+</form>
+</div>
+
+<div class="split-side">
+  <div class="card">
+    <div class="card-title">Recent setups</div>
+    {% for s in setups %}
+    <a href="{% url 'setup_detail' s.pk %}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);text-decoration:none;gap:8px">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">#{{ s.setup_number }} {{ s.pair|upper }}</span>
+      <span style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+        {% if s.grade %}<span class="badge badge-{{ s.grade }}">{{ s.grade }}</span>{% endif %}
+        {% if s.outcome %}<span class="badge badge-{{ s.outcome }}">{{ s.outcome_display_short }}</span>{% endif %}
+      </span>
+    </a>
+    {% empty %}
+    <p style="font-size:13px;color:var(--text3)">No setups yet.</p>
+    {% endfor %}
+    {% if setups %}
+    <div style="margin-top:12px"><a href="{% url 'setup_list' %}" class="btn-secondary" style="width:100%;text-align:center;display:block">View all setups</a></div>
+    {% endif %}
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let psychSelected = [];
+function setGrade(g, btn) {
+  document.getElementById('grade-hidden').value = g;
+  document.querySelectorAll('.grade-btn').forEach(b => b.className = 'grade-btn');
+  const map = {A:'active-a', B:'active-b', SKIP:'active-skip'};
+  btn.classList.add(map[g]);
+}
+function setOutcome(o, btn) {
+  document.getElementById('outcome-hidden').value = o;
+  document.querySelectorAll('.outcome-btn').forEach(b => b.className = 'outcome-btn');
+  btn.classList.add('active-' + o);
+}
+function togglePsych(btn) {
+  const tag = btn.textContent.trim();
+  if (psychSelected.includes(tag)) { psychSelected = psychSelected.filter(t=>t!==tag); btn.classList.remove('active'); }
+  else { psychSelected.push(tag); btn.classList.add('active'); }
+  document.getElementById('psych-hidden').value = JSON.stringify(psychSelected);
+}
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    const img = document.getElementById('preview-img');
+    img.src = URL.createObjectURL(input.files[0]);
+    img.style.display = 'block';
+  }
+}
+</script>
+{% endblock %}

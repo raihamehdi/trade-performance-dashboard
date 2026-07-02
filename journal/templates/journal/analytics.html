@@ -1,0 +1,44 @@
+{% extends 'journal/base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Analytics</div><div class="page-sub">Based on {{ stats.total }} setups logged</div></div>
+</div>
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-label">Total setups</div><div class="stat-val blue">{{ stats.total }}</div></div>
+  <div class="stat-card"><div class="stat-label">Overall win rate</div><div class="stat-val green">{% if stats.win_rate %}{{ stats.win_rate }}%{% else %}—{% endif %}</div></div>
+  <div class="stat-card"><div class="stat-label">A-grade setups</div><div class="stat-val amber">{% if stats.a_pct %}{{ stats.a_pct }}%{% else %}—{% endif %}</div></div>
+  <div class="stat-card"><div class="stat-label">Avg planned R:R</div><div class="stat-val">{% if stats.avg_rr %}{{ stats.avg_rr }}R{% else %}—{% endif %}</div></div>
+</div>
+<div class="progress-wrap">
+  <div class="progress-label"><span>1000-setup progress</span><span style="color:var(--green)">{{ stats.total }} / 1000 · {{ stats.progress_pct }}%</span></div>
+  <div class="progress-track"><div class="progress-fill" style="width:{{ stats.progress_pct }}%"></div></div>
+  <div class="progress-phases"><span>Phase 1 (0–200)</span><span>Phase 2 (201–500)</span><span>Phase 3 (501–800)</span><span>Phase 4 (801–1000)</span></div>
+</div>
+<div class="analytics-grid">
+  <div class="card">
+    <div class="card-title">Win rate by session</div>
+    {% for label, data in session_data.items %}
+    <div class="bar-row"><div class="bar-label">{{ label }}</div><div class="bar-track"><div class="bar-fill" style="width:{{ data.win_rate }}%"></div></div><div class="bar-val">{{ data.win_rate }}%</div></div>
+    {% empty %}<p style="font-size:13px;color:var(--text3)">No data yet.</p>{% endfor %}
+  </div>
+  <div class="card">
+    <div class="card-title">Win rate by entry TF</div>
+    {% for label, data in tf_data.items %}
+    <div class="bar-row"><div class="bar-label">{{ label }}</div><div class="bar-track"><div class="bar-fill" style="width:{{ data.win_rate }}%"></div></div><div class="bar-val">{{ data.win_rate }}% <span style="color:var(--text3);font-size:10px">({{ data.total }})</span></div></div>
+    {% empty %}<p style="font-size:13px;color:var(--text3)">No data yet.</p>{% endfor %}
+  </div>
+  <div class="card">
+    <div class="card-title">Win rate by grade</div>
+    {% for label, data in grade_data.items %}
+    <div class="bar-row"><div class="bar-label">{{ label }}</div><div class="bar-track"><div class="bar-fill" style="width:{{ data.win_rate }}%"></div></div><div class="bar-val">{{ data.win_rate }}% <span style="color:var(--text3);font-size:10px">({{ data.total }})</span></div></div>
+    {% empty %}<p style="font-size:13px;color:var(--text3)">No data yet.</p>{% endfor %}
+  </div>
+  <div class="card">
+    <div class="card-title">Psychology tags on losing trades</div>
+    {% for tag, count in psych_loss %}
+    <div class="bar-row"><div class="bar-label">{{ tag }}</div><div class="bar-track"><div class="bar-fill red" style="width:{% widthratio count psych_loss.0.1 100 %}%"></div></div><div class="bar-val" style="color:var(--red)">{{ count }}</div></div>
+    {% empty %}<p style="font-size:13px;color:var(--text3)">No loss data yet.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

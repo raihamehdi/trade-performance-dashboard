@@ -1,0 +1,15 @@
+{% extends 'journal/base.html' %}
+{% block title %}Delete Setup #{{ setup.setup_number }}{% endblock %}
+{% block content %}
+<div style="max-width:440px;margin:4rem auto">
+  <div class="card">
+    <div class="card-title">Confirm delete</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:18px">Delete setup <span style="color:var(--text);font-family:var(--mono)">#{{ setup.setup_number }} — {{ setup.pair|upper }}</span>? This cannot be undone.</p>
+    <form method="post" style="display:flex;gap:8px">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger" style="flex:1;padding:10px;text-align:center">Yes, delete</button>
+      <a href="{% url 'setup_detail' setup.pk %}" class="btn-secondary" style="flex:1;text-align:center;padding:10px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'journal/base.html' %}
+{% block title %}Setup #{{ setup.setup_number }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Setup #{{ setup.setup_number }} — {{ setup.pair|upper }}</div>
+    <div class="page-sub">{{ setup.date }}{% if setup.time %} · {{ setup.time }}{% endif %}{% if setup.session %} · {{ setup.get_session_display }}{% endif %}</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{% url 'setup_list' %}" class="btn-secondary">← Back</a>
+    <a href="{% url 'setup_delete' setup.pk %}" class="btn-danger">Delete</a>
+  </div>
+</div>
+
+<div class="split">
+<div class="split-main">
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+
+<div class="card">
+  <div class="card-title">Setup details</div>
+  <div class="field-grid fg4" style="margin-bottom:10px">
+    <div class="field"><label>Setup #</label><input type="number" name="setup_number" value="{{ setup.setup_number }}" required></div>
+    <div class="field"><label>Date</label><input type="date" name="date" value="{{ setup.date|date:'Y-m-d' }}" required></div>
+    <div class="field"><label>Time</label><input type="time" name="time" value="{{ setup.time|default:'' }}"></div>
+    <div class="field"><label>Pair</label><input type="text" name="pair" value="{{ setup.pair }}" required></div>
+  </div>
+  <div class="field-grid fg3">
+    <div class="field"><label>Session</label><select name="session"><option value="">—</option>{% for v,l in form.fields.session.choices %}{% if v %}<option value="{{ v }}"{% if setup.session == v %} selected{% endif %}>{{ l }}</option>{% endif %}{% endfor %}</select></div>
+    <div class="field"><label>M15 bias</label><select name="m15_bias"><option value="">—</option>{% for v,l in form.fields.m15_bias.choices %}{% if v %}<option value="{{ v }}"{% if setup.m15_bias == v %} selected{% endif %}>{{ l }}</option>{% endif %}{% endfor %}</select></div>
+    <div class="field"><label>Entry TF</label><select name="entry_tf"><option value="">—</option>{% for v,l in form.fields.entry_tf.choices %}{% if v %}<option value="{{ v }}"{% if setup.entry_tf == v %} selected{% endif %}>{{ l }}</option>{% endif %}{% endfor %}</select></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Setup grade</div>
+  <input type="hidden" name="grade" id="grade-hidden" value="{{ setup.grade }}">
+  <div class="grade-group" style="margin-bottom:10px">
+    <button type="button" class="grade-btn {% if setup.grade == 'A' %}active-a{% endif %}" onclick="setGrade('A',this)">A-grade</button>
+    <button type="button" class="grade-btn {% if setup.grade == 'B' %}active-b{% endif %}" onclick="setGrade('B',this)">B-grade</button>
+    <button type="button" class="grade-btn {% if setup.grade == 'SKIP' %}active-skip{% endif %}" onclick="setGrade('SKIP',this)">Skip / invalid</button>
+  </div>
+  <div class="field"><label>Why this grade?</label><textarea name="grade_reason">{{ setup.grade_reason }}</textarea></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Risk & numbers</div>
+  <div class="field-grid fg3" style="margin-bottom:10px">
+    <div class="field"><label>Entry price</label><input type="number" name="entry_price" step="0.00001" value="{{ setup.entry_price|default:'' }}"></div>
+    <div class="field"><label>Stop loss</label><input type="number" name="stop_loss" step="0.00001" value="{{ setup.stop_loss|default:'' }}"></div>
+    <div class="field"><label>Take profit</label><input type="number" name="take_profit" step="0.00001" value="{{ setup.take_profit|default:'' }}"></div>
+  </div>
+  <div class="field-grid fg3">
+    <div class="field"><label>Planned R:R</label><input type="number" name="planned_rr" step="0.1" value="{{ setup.planned_rr|default:'' }}"></div>
+    <div class="field"><label>% risk</label><input type="number" name="risk_percent" step="0.1" value="{{ setup.risk_percent|default:'' }}"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Outcome</div>
+  <input type="hidden" name="outcome" id="outcome-hidden" value="{{ setup.outcome }}">
+  <div class="outcome-group" style="margin-bottom:10px">
+    <button type="button" class="outcome-btn {% if setup.outcome == 'win' %}active-win{% endif %}" onclick="setOutcome('win',this)">Win</button>
+    <button type="button" class="outcome-btn {% if setup.outcome == 'loss' %}active-loss{% endif %}" onclick="setOutcome('loss',this)">Loss</button>
+    <button type="button" class="outcome-btn {% if setup.outcome == 'be' %}active-be{% endif %}" onclick="setOutcome('be',this)">Break-even</button>
+    <button type="button" class="outcome-btn {% if setup.outcome == 'not_taken' %}active-not_taken{% endif %}" onclick="setOutcome('not_taken',this)">Not taken</button>
+  </div>
+  <div class="field-grid fg2">
+    <div class="field"><label>Actual R</label><input type="number" name="actual_r" step="0.1" value="{{ setup.actual_r|default:'' }}"></div>
+    <div class="field"><label>Exit reason</label><input type="text" name="exit_reason" value="{{ setup.exit_reason }}"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Screenshot</div>
+  {% if setup.screenshot %}
+  <div style="margin-bottom:10px"><a href="{{ setup.screenshot.url }}" target="_blank"><img src="{{ setup.screenshot.url }}" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" alt="setup screenshot"></a></div>
+  {% endif %}
+  <div class="upload-area" onclick="document.getElementById('screenshot-input').click()">
+    <input type="file" name="screenshot" id="screenshot-input" accept="image/*" onchange="previewImage(this)">
+    <div class="upload-label">{% if setup.screenshot %}Replace screenshot{% else %}Upload screenshot{% endif %} · <span>PNG, JPG, WEBP</span></div>
+    <img id="preview-img" class="screenshot-preview" style="display:none" src="" alt="preview">
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Psychology check</div>
+  <input type="hidden" name="psych_tags" id="psych-hidden" value="{{ setup.psych_tags|default:'[]' }}">
+  <div class="psych-grid" style="margin-bottom:12px">
+    {% for tag in psych_choices %}
+    <button type="button" class="psych-tag {% if tag in setup.psych_tags %}active{% endif %}" onclick="togglePsych(this)">{{ tag }}</button>
+    {% endfor %}
+  </div>
+  <div class="field">
+    <label>Psychology note</label>
+    <textarea name="psych_note">{{ setup.psych_note }}</textarea>
+  </div>
+</div>
+
+<button type="submit" class="btn-primary full">Update setup</button>
+</form>
+
+{% if findings %}
+<div style="margin-top:20px">
+  <div class="card-title" style="border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px">Findings logged for this setup</div>
+  {% for f in findings %}
+  <div class="finding-item">
+    <div><div class="finding-text">{{ f.text }}</div><div class="finding-meta">{{ f.get_category_display }} · {{ f.created_at|date:"M j, Y" }}</div></div>
+    <form method="post" action="{% url 'finding_delete' f.pk %}">{% csrf_token %}<button type="submit" class="finding-del">✕</button></form>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+</div>
+
+<div class="split-side">
+  <div class="card">
+    <div class="card-title">Summary</div>
+    <div class="detail-grid" style="margin-bottom:14px">
+      <div><div class="di-label">Grade</div><div class="di-val">{% if setup.grade %}<span class="badge badge-{{ setup.grade }}">{{ setup.grade }}</span>{% else %}—{% endif %}</div></div>
+      <div><div class="di-label">Outcome</div><div class="di-val">{% if setup.outcome %}<span class="badge badge-{{ setup.outcome }}">{{ setup.get_outcome_display }}</span>{% else %}—{% endif %}</div></div>
+      <div><div class="di-label">Planned R:R</div><div class="di-val">{{ setup.planned_rr|default:"—" }}</div></div>
+      <div><div class="di-label">Actual R</div><div class="di-val">{{ setup.actual_r|default:"—" }}</div></div>
+      <div><div class="di-label">Risk %</div><div class="di-val">{{ setup.risk_percent|default:"—" }}</div></div>
+    </div>
+    {% if setup.psych_tags %}
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div class="di-label" style="margin-bottom:7px">Psych tags</div>
+      <div class="psych-grid">{% for tag in setup.psych_tags %}<span class="psych-tag active" style="cursor:default">{{ tag }}</span>{% endfor %}</div>
+    </div>
+    {% endif %}
+    <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:12px;font-size:11px;color:var(--text3);font-family:var(--mono)">
+      Logged: {{ setup.created_at|date:"Y-m-d H:i" }}<br>Updated: {{ setup.updated_at|date:"Y-m-d H:i" }}
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let psychSelected = {{ setup.psych_tags|default:"[]" }};
+function setGrade(g,btn){document.getElementById('grade-hidden').value=g;document.querySelectorAll('.grade-btn').forEach(b=>b.className='grade-btn');const m={A:'active-a',B:'active-b',SKIP:'active-skip'};btn.classList.add(m[g]);}
+function setOutcome(o,btn){document.getElementById('outcome-hidden').value=o;document.querySelectorAll('.outcome-btn').forEach(b=>b.className='outcome-btn');btn.classList.add('active-'+o);}
+function togglePsych(btn){const tag=btn.textContent.trim();if(psychSelected.includes(tag)){psychSelected=psychSelected.filter(t=>t!==tag);btn.classList.remove('active');}else{psychSelected.push(tag);btn.classList.add('active');}document.getElementById('psych-hidden').value=JSON.stringify(psychSelected);}
+function previewImage(input){if(input.files&&input.files[0]){const img=document.getElementById('preview-img');img.src=URL.createObjectURL(input.files[0]);img.style.display='block';}}
+</script>
+{% endblock %}

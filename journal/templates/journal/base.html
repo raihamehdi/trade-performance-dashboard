@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Trading Journal{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'journal/css/style.css' %}">
+<link rel="icon" type="image/png" href="{% static 'journal/images/favicon.png' %}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<nav class="nav">
+  <span class="nav-brand">// Mayhem's Edge</span>
+  <div class="nav-links">
+    <a href="{% url 'dashboard' %}"    {% if request.resolver_match.url_name == 'dashboard'     %}class="active"{% endif %}>Log setup</a>
+    <a href="{% url 'setup_list' %}"   {% if request.resolver_match.url_name == 'setup_list'    %}class="active"{% endif %}>All setups</a>
+    <a href="{% url 'analytics' %}"    {% if request.resolver_match.url_name == 'analytics'     %}class="active"{% endif %}>Analytics</a>
+    <a href="{% url 'mastery' %}"      {% if request.resolver_match.url_name == 'mastery'       %}class="active"{% endif %}>Mastery</a>
+    <a href="{% url 'strategy_page' %}"{% if request.resolver_match.url_name == 'strategy_page' %}class="active"{% endif %}>Strategy</a>
+  </div>
+  <div class="nav-right">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark"></button>
+    <span class="nav-user">{{ user.username }} &nbsp;·&nbsp; <a href="{% url 'logout' %}" style="color:var(--text3)">logout</a></span>
+  </div>
+</nav>
+{% endif %}
+
+<div class="container">
+  {% if messages %}
+  <ul class="messages">
+    {% for msg in messages %}
+    <li class="{{ msg.tags }}">{{ msg }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% block content %}{% endblock %}
+</div>
+
+{% block extra_js %}{% endblock %}
+<script>
+(function(){
+  var t = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  var btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme');
+      var next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+  }
+})();
+</script>
+</body>
+</html>

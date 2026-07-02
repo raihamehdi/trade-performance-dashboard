@@ -1,0 +1,55 @@
+{% extends 'journal/base.html' %}
+{% block title %}Strategy — SMC Structure Entry{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Strategy A — written playbook</div>
+    <div class="page-sub">Last updated: {{ note.updated_at|date:"M j, Y H:i" }}</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-secondary" id="toggle-mode-btn" onclick="toggleMode()">Switch to edit</button>
+    <button type="submit" form="strategy-form" class="btn-primary">Save</button>
+  </div>
+</div>
+
+<!-- READ MODE -->
+<div id="read-mode">
+  <div class="strategy-editor">
+    <div class="strategy-toolbar">
+      <span style="color:var(--green);font-family:var(--mono)">// strategy_a.md</span>
+      <span>read mode</span>
+    </div>
+    <div class="strategy-rendered" id="rendered-content">
+      {{ note.content|linebreaks }}
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODE -->
+<div id="edit-mode" style="display:none">
+  <form method="post" id="strategy-form">
+    {% csrf_token %}
+    <div class="strategy-editor">
+      <div class="strategy-toolbar">
+        <span style="color:var(--amber);font-family:var(--mono)">// strategy_a.md</span>
+        <span>edit mode · markdown supported</span>
+      </div>
+      <textarea name="content" id="strategy-textarea">{{ note.content }}</textarea>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let isEdit = false;
+function toggleMode(){
+  isEdit = !isEdit;
+  document.getElementById('read-mode').style.display = isEdit ? 'none' : 'block';
+  document.getElementById('edit-mode').style.display = isEdit ? 'block' : 'none';
+  document.getElementById('toggle-mode-btn').textContent = isEdit ? 'Switch to read' : 'Switch to edit';
+}
+</script>
+{% endblock %}

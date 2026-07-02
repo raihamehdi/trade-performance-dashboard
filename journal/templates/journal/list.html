@@ -1,0 +1,62 @@
+{% extends 'journal/base.html' %}
+{% block title %}All Setups{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Setup log</div><div class="page-sub">{{ stats.total }} setups · {{ stats.progress_pct }}% of 1000</div></div>
+  <a href="{% url 'dashboard' %}" class="btn-primary">+ Log new setup</a>
+</div>
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val blue">{{ stats.total }}</div></div>
+  <div class="stat-card"><div class="stat-label">Win rate</div><div class="stat-val green">{% if stats.win_rate %}{{ stats.win_rate }}%{% else %}—{% endif %}</div></div>
+  <div class="stat-card"><div class="stat-label">A-grade %</div><div class="stat-val amber">{% if stats.a_pct %}{{ stats.a_pct }}%{% else %}—{% endif %}</div></div>
+  <div class="stat-card"><div class="stat-label">Avg R:R</div><div class="stat-val">{% if stats.avg_rr %}{{ stats.avg_rr }}R{% else %}—{% endif %}</div></div>
+</div>
+<form method="get" class="filter-row">
+  <select name="grade" onchange="this.form.submit()">
+    <option value="">All grades</option>
+    <option value="A" {% if grade_filter == 'A' %}selected{% endif %}>A-grade</option>
+    <option value="B" {% if grade_filter == 'B' %}selected{% endif %}>B-grade</option>
+    <option value="SKIP" {% if grade_filter == 'SKIP' %}selected{% endif %}>Skip / invalid</option>
+  </select>
+  <select name="outcome" onchange="this.form.submit()">
+    <option value="">All outcomes</option>
+    <option value="win" {% if outcome_filter == 'win' %}selected{% endif %}>Win</option>
+    <option value="loss" {% if outcome_filter == 'loss' %}selected{% endif %}>Loss</option>
+    <option value="be" {% if outcome_filter == 'be' %}selected{% endif %}>Break-even</option>
+    <option value="not_taken" {% if outcome_filter == 'not_taken' %}selected{% endif %}>Not taken</option>
+  </select>
+  <input type="text" name="pair" value="{{ pair_filter }}" placeholder="Filter by pair...">
+  <button type="submit" class="btn-secondary">Filter</button>
+  {% if grade_filter or outcome_filter or pair_filter %}<a href="{% url 'setup_list' %}" class="btn-secondary">Clear</a>{% endif %}
+</form>
+<div class="card" style="padding:0;overflow:hidden">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Date</th><th>Pair</th><th>Session</th><th>Bias</th><th>Entry TF</th>
+        <th>Grade</th><th>Outcome</th><th>Plan R:R</th><th>Actual R</th><th>SS</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for s in setups %}
+        <tr>
+          <td><a href="{% url 'setup_detail' s.pk %}">#{{ s.setup_number }}</a></td>
+          <td>{{ s.date }}</td>
+          <td style="color:var(--text);font-weight:500">{{ s.pair|upper }}</td>
+          <td>{{ s.get_session_display|default:"—" }}</td>
+          <td>{{ s.get_m15_bias_display|default:"—" }}</td>
+          <td>{{ s.get_entry_tf_display|default:"—" }}</td>
+          <td>{% if s.grade %}<span class="badge badge-{{ s.grade }}">{{ s.grade }}</span>{% else %}—{% endif %}</td>
+          <td>{% if s.outcome %}<span class="badge badge-{{ s.outcome }}">{{ s.get_outcome_display }}</span>{% else %}—{% endif %}</td>
+          <td>{% if s.planned_rr %}{{ s.planned_rr }}R{% else %}—{% endif %}</td>
+          <td>{% if s.actual_r %}{{ s.actual_r }}R{% else %}—{% endif %}</td>
+          <td>{% if s.screenshot %}<a href="{{ s.screenshot.url }}" target="_blank" class="thumb-link"><img class="thumb" src="{{ s.screenshot.url }}" alt="ss"></a>{% else %}—{% endif %}</td>
+          <td class="td-right"><a href="{% url 'setup_detail' s.pk %}" style="color:var(--text3);font-size:11px">edit →</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" style="text-align:center;padding:2rem;color:var(--text3)">No setups match this filter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
