@@ -1,4 +1,4 @@
-# trade-performance-dashboard
+# Trade-performance-dashboard
 A professional-grade **trading journal system built with Django** that helps traders track setups, analyze performance, and refine strategies using structured data and behavioral insights.
 
 This project transforms trading from guesswork into a **data-driven decision system**.
